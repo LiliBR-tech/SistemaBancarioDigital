@@ -1,0 +1,49 @@
+sistema:
+  nome: "Sistema Bancário Simulado"
+  versao: "1.0.0"
+  versao_config: "1.0.0"  # Versão do arquivo de configuração
+
+criptografia:
+  ativa: true
+  algoritmo: "AES"
+  chave_tamanho: 128
+  iv_aleatorio: true
+  chave_armazenamento:
+    tipo: "HSM"
+
+taxas:
+  juros_poupanca: 0.05
+  juros_emprestimo: 0.12
+
+criptomoedas:
+  ativo: true
+  suportadas:
+    - "Bitcoin"
+    - "Ethereum"
+    - "Litecoin"
+  api_integracao: "https://api.exemplo.com/crypto"
+  api_tolerancia_falhas:
+    max_retries: 3
+    tempo_entre_retentativas: 5
+
+seguranca:
+  hash_senha: "SHA-256"
+  salt_ativado: true
+  autenticação:
+    tipo: "OAuth2"
+    token_expiracao: 3600
+    renovacao_automatica: true
+    metodo_renovacao:
+      tipo: "refresh_token"
+
+logs:
+  nivel: "INFO"
+  arquivo: "/var/log/sistema_bancario.log"
+
+backups:
+  habilitado: true
+  intervalo: "24h"
+  armazenamento: "AWS_S3"
+
+sessao:
+  tempo_expiracao: 1800  # 30 minutos
