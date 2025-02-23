@@ -1,0 +1,93 @@
+name: CI/CD para Sistema Bancário
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Verificar versão do Java
+        run: java -version  # Verifica se o JDK foi instalado corretamente
+
+      - name: Criar diretório de saída
+        run: mkdir -p out lib
+
+      # Baixar dependências manualmente (como você fez antes)
+      - name: Baixar bibliotecas do projeto
+        run: |
+          wget -P lib https://repo1.maven.org/maven2/org/mindrot/jbcrypt/0.4/jbcrypt-0.4.jar
+          wget -P lib https://repo1.maven.org/maven2/org/junit/platform/junit-platform-engine/1.9.2/junit-platform-engine-1.9.2.jar
+          wget -P lib https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-databind/2.15.3/jackson-databind-2.15.3.jar
+          wget -P lib https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-core/2.15.3/jackson-core-2.15.3.jar
+          wget -P lib https://repo1.maven.org/maven2/com/fasterxml/jackson/core/jackson-annotations/2.15.3/jackson-annotations-2.15.3.jar
+          wget -P lib https://repo1.maven.org/maven2/org/junit/platform/junit-platform-launcher/1.9.2/junit-platform-launcher-1.9.2.jar
+          curl -L https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-api/5.9.2/junit-jupiter-api-5.9.2.jar -o lib/junit-jupiter-api.jar
+          curl -L https://repo1.maven.org/maven2/org/junit/jupiter/junit-jupiter-engine/5.9.2/junit-jupiter-engine-5.9.2.jar -o lib/junit-jupiter-engine.jar
+          curl -L https://repo1.maven.org/maven2/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar -o lib/apiguardian-api.jar
+          curl -L https://repo1.maven.org/maven2/org/opentest4j/opentest4j/1.2.0/opentest4j-1.2.0.jar -o lib/opentest4j.jar
+          curl -L https://repo1.maven.org/maven2/org/junit/platform/junit-platform-commons/1.9.2/junit-platform-commons-1.9.2.jar -o lib/junit-platform-commons.jar
+          curl -L https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console/1.9.2/junit-platform-console-1.9.2.jar -o lib/junit-platform-console.jar
+
+      - name: Verificar dependências baixadas
+        run: ls -l lib/
+
+      # Compilar código Java
+      - name: Compilar código principal
+        run: find src/main/java -name "*.java" -print0 | xargs -0 javac -d out -cp "lib/*"
+     
+      - name: Compilar testes
+        run: find src/tests/java -name "*.java" -print0 | xargs -0 javac -d out -cp "lib/*:out"
+
+      # Executar testes unitários
+      - name: Executar testes com JUnit 5
+        run: java -cp "lib/*:out" org.junit.platform.console.ConsoleLauncher --scan-class-path
+             
+      # Criar JAR executável
+      - name: Criar JAR executável
+        run: jar cvfe SistemaBancario.jar br.com.SistemaBancario.Main -C out .
+
+      # Publicar artefato
+      - name: Publicar JAR compilado
+        uses: actions/upload-artifact@v4
+        with:
+          name: SistemaBancario
+          path: SistemaBancario.jar
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Baixar artefato do build
+        uses: actions/download-artifact@v4
+        with:
+          name: SistemaBancario
+          path: deploy/
+
+        # Limpar diretório de saída (out)
+      - name: Clean output directory
+        run: |
+          echo "Cleaning up the out directory"
+          rm -rf out
